@@ -16,16 +16,17 @@ router.post('/createuser', [
     body('email').isEmail(),
     body('password').isLength({ min: 5 }),
 ], async (req, res) => {
+    let success = false;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res.status(400).json({success, errors: errors.array() });
     }
     try {
 
         //checking if user already exist or not.
         let user = await User.findOne({ email: req.body.email });
         if (user) {
-            return res.status(400).json({ error: "User with this email already exists" })
+            return res.status(400).json({success, error: "User with this email already exists" })
         }
 
         //creating new user
@@ -41,8 +42,9 @@ router.post('/createuser', [
                 id:user.id
             }
         }
+        success=true;
         const authToken = JWT.sign(data, JWT_Secret);
-        res.json({authToken});
+        res.json({success, authToken});
     }
 
     //catching error if any occur
@@ -58,29 +60,31 @@ router.post('/login',[
     body('email','Enter a valid email').isEmail(),
     body('password','Password cannot be blank').exists(),
 ], async(req,res)=>{
+    let success = false;
     const errors = validationResult(req)
     if(!errors.isEmpty()){
-        return res.status(400).json({errors:errors.array()});
+        return res.status(400).json({success, errors:errors.array()});
     }
 
     const{email,password} = req.body;
     try {
         const user = await User.findOne({email});
         if(!user){
-            return res.status(400).json({error:"Please try to login with correct credentials"});
+            return res.status(400).json({success,error:"Please try to login with correct credentials"});
         }
 
         const passwordCompare = await bcrypt.compare(password,user.password);
         if(!passwordCompare){
-            return res.status(400).json({error:"Please try to login with correct credentials"});
+            return res.status(400).json({success, error:"Please try to login with correct credentials"});
         }
         const data = {
             user:{
                 id:user.id
             }
         }
+        success = true;
         const authToken = JWT.sign(data, JWT_Secret);
-        res.json({authToken});
+        res.json({success,authToken});
 
     } catch (error) {
         console.log(error.message);
